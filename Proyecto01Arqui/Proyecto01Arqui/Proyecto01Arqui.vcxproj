@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <MASM Include="MCD.asm" />
     <MASM Include="Proyecto01.asm" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

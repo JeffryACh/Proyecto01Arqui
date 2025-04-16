@@ -1,59 +1,53 @@
-; Programa que implementa la funcion de Maximo Comun Divisor para variables enteras de 16 bits
-
+;Convierte de caracter ascii a binario
 includelib \Windows\System32\kernel32.dll
 
-ExitProcess  proto
+ExitProcess proto
 
 .data
-    a   dw 365
-    b   dw 70
-    mcd dw ?
+    char   db 'A'                ; Carácter ASCII que queremos convertir
+    binario db 32 dup('0')       ; Espacio para binario de 32 bits, inicializado con ceros
 
 .code
 main PROC
 
-   push a       ; Prepara el stack frame para la llamada
-   push b       ; a la función MCD
-   sub RSP,2    ;
+    ; Cargar direcciones válidas en registros de 64 bits
+    mov rsi, OFFSET char         ; Dirección del carácter ASCII en RSI
+    mov rdi, OFFSET binario      ; Dirección del binario en RDI
+    call _AsciiABinario32        ; Llama a la función para convertir ASCII a binario
 
-   call _MCD     ; Recupera el valor calculado por MCD
-   pop AX       ; y "limpia" la pila
-   add RSP,4    ;
-
-   mov mcd,AX   ; "Anuncia" el resultado
-
-   call ExitProcess
+    ; Finaliza el programa
+    call ExitProcess
 
 main ENDP
 
-_MCD PROC
-; Stack Frame:
-; (ret.addr.): +0
-; (ret.val.):  +8
-; b:           +10
-; a:           +12
+_AsciiABinario32 PROC
+; Convierte un carácter ASCII en su representación binaria de 32 bits
+; Entrada: RSI -> dirección del carácter ASCII
+; Salida: RDI -> dirección del binario de 32 bits
 
-   mov R9w,[RSP+12]   ;R8 <- a
-   mov R10w,[RSP+10]  ;R9 <- b
-                      ;R10<-r
-   mov AX,0
+    ; Rellenar los primeros 24 bits con ceros
+    mov rcx, 24                  ; Contador para rellenar 24 ceros
+RellenarCeros:
+    mov byte ptr [rdi], '0'      ; Escribe '0' en la posición actual de RDI
+    inc rdi                      ; Avanza al siguiente byte
+    loop RellenarCeros           ; Repite hasta completar los 24 ceros
 
-ciclo_MCD:           ; Ciclo "while" de MCD
-   mov R8w,R9w       ; Corrimiento de los valores de b y r
-   mov R9w,R10w      ;
+    ; Procesar el carácter ASCII
+    mov al, byte ptr [rsi]       ; Carga el carácter ASCII en AL
+    xor ah, ah                   ; Limpia AH para trabajar con AX
+    mov rcx, 8                   ; Contador para los 8 bits del carácter
+GenerarBinario:
+    shl ax, 1                    ; Desplaza el bit más significativo a CF
+    jc EsUno                     ; Si el bit es 1, salta a EsUno
+    mov byte ptr [rdi], '0'      ; Escribe '0' si el bit es 0
+    jmp Siguiente
+EsUno:
+    mov byte ptr [rdi], '1'      ; Escribe '1' si el bit es 1
+Siguiente:
+    inc rdi                      ; Avanza al siguiente byte
+    loop GenerarBinario          ; Repite para los 8 bits del carácter
 
-   xor DX,DX         ; Prepara la division entera
-   mov AX,R8w
-
-   idiv R9w          ;Después de idiv AX<-cociente, DX<-residuo
-   mov R10w,DX
-   cmp R10w,0
-   je fin_ciclo_mcd
-   jmp ciclo_MCD     ; Fin del "while" de MCD
-fin_ciclo_MCD:
-   mov [RSP+8],R9w
-   ret
-
-_MCD ENDP
+    ret                          ; Retorna al llamador
+_AsciiABinario32 ENDP
 
 END
