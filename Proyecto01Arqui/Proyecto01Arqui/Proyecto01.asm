@@ -1,52 +1,71 @@
-;  Proyecto01.asm (x64)
+; File: Proyecto01.asm
 
-;option casemap:none  ;  Sensible a mayúsculas/minúsculas
+option casemap:none
 
 EXTERN _MCD: PROC
 EXTERN ExitProcess: PROC
 
 .DATA
-    a_val   DQ 365
-    b_val   DQ 70
-    mcm_val DQ ?
+    a_val       DQ 365
+    b_val       DQ 70
+    mcm_result  DB 20 DUP (?)
     overflow_msg DB "Overflow", 0
 
 .CODE
 
 inicio_programa PROC
-    ;  --- Calcular el MCD ---
+    ; --- Calcular el MCD ---
     MOV RCX, a_val
     MOV RDX, b_val
     CALL _MCD
-    MOV R8, RAX
+    MOV R8, RAX  ; Guardar el MCD
 
-    ;  --- Calcular el MCM: (a * b) / MCD ---
+    ; --- Calcular el MCM ---
     MOV RAX, a_val
     MUL b_val
+
     CMP RDX, 0
     JNE manejar_overflow
 
-    MOV RAX, a_val
-    MUL b_val
-    CMP RDX, 0
-    JNE manejar_overflow
-    MOV RCX, RAX
+    ; --- Dividir el producto por el MCD ---
+    MOV RCX, R8
     XOR RDX, RDX
-    DIV R8
-    MOV mcm_val, RAX
+    DIV RCX
+    MOV R9, RAX  ; Resultado de la division (MCM)
 
-    ;  --- Llamar a ExitProcess ---
+    ; --- (Aqui podrías convertir R9 a ASCII y guardarlo en mcm_result) ---
+
+    ; --- Terminar programa ---
     MOV RCX, 0
     CALL ExitProcess
-    JMP fin_programa
+
+inicio_programa ENDP
 
 manejar_overflow PROC
     LEA RCX, overflow_msg
-    ;  ... (Código para mostrar el mensaje de overflow)
+    MOV RDI, OFFSET mcm_result
+    MOV RSI, OFFSET overflow_msg
+    CALL copy_string
+
+    MOV RCX, 1
+    CALL ExitProcess
+
+manejar_overflow ENDP
+
+copy_string PROC
+copy_loop:
+    MOV AL, [RSI]
+    CMP AL, 0
+    JE copy_done
+    MOV [RDI], AL
+    INC RDI
+    INC RSI
+    JMP copy_loop
+
+copy_done:
     RET
 
-fin_programa:
-    RET
-inicio_programa ENDP
+copy_string ENDP
 
-END inicio_programa ;  <--- Especificamos el punto de entrada aquí
+END
+
